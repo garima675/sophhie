@@ -1,0 +1,51 @@
+#login,
+.login__form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  max-width: 23.68rem;
+}
+
+
+  
+#login a {
+    text-decoration: underline;
+  }
+
+#login {
+  width: 50%;
+ margin:auto;
+}
+
+
+#login input {
+    height: 50px;
+    font-size: 1.2em;
+    border: none;
+    box-shadow: 0px 4px 14px rgba(0, 0, 0, 0.09);
+    cursor: pointer;
+  }
+
+  #login > * {
+    text-align: center;
+  }
+  
+#login input[type="email"],
+#login input[type="password"] {
+  padding: 1px 20px;
+}
+#login label {
+    margin: 2em 0 1em 0;
+  }
+
+  input[type="submit"] {
+    font-family: "Syne";
+    font-weight: 700;
+    color: white;
+    background-color: #1d6154;
+    margin: 2em auto;
+    width: 180px;
+    text-align: center;
+    border-radius: 60px;
+  }
