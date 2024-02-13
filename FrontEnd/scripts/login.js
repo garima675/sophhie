@@ -1,4 +1,33 @@
+
+/**create a modal alert when the response is not correct**/
+export async function modalAlert(message) {
+  const modalAlert = document.createElement("dialog");
+  modalAlert.classList.add("modal__alert");
+  modalAlert.textContent = message;
+  const exitModalBtn = document.createElement("button");
+  exitModalBtn.classList.add("modal__alert-btn");
+  exitModalBtn.textContent = "Retour";
+  modalAlert.appendChild(exitModalBtn);
+  const loginSection = document.getElementById("login");
+  loginSection.appendChild(modalAlert);
+  modalAlert.showModal();
+
+  exitModalBtn.addEventListener("click", function (event) {
+    event.preventDefault();
+    modalAlert.close();
+    modalAlert.style.display = "none";
+  });
+
+  window.onclick = function (event) {
+    if (event.target === modalAlert) {
+      event.preventDefault();
+      modalAlert.close();
+      modalAlert.style.display = "none";
+    }
+  };
+}
 /** retrieve the form **/
+
 const form = document.querySelector("form");
 
 async function onSubmit(event) {
@@ -21,8 +50,6 @@ async function onSubmit(event) {
             body: JSON.stringify(user),
         }
     );
-    
-
     let result = await response.json();
     
 
@@ -37,7 +64,16 @@ async function onSubmit(event) {
         console.log("Login failed");
         form.email.value = "";
         form.password.value = "";
-        alert("le nom d'utilisateur ou le mot de passe n'est pas bon");
+        modalAlert("Les identifiants indiqués sont mal");
     }
 }
+//To show the modal error message
+
+form.addEventListener("submit", onSubmit);
+
+const body = document.querySelector("body");
+body.style.height = "100%";
+
+
+
 
