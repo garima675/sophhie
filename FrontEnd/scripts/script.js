@@ -6,7 +6,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Call the function to display filters
     displayFilters();
-
     displayAdminMode();
 });
 
@@ -38,6 +37,10 @@ function displayWorks() {
 }
 
 function displayFilters() {
+
+  if (sessionStorage.getItem("token")) {
+    return; // If logged in, exit the function without displaying filters
+  }
     // New promise: wait for this function to be executed in full before executing the next one
     return new Promise((resolve) => {
       // Fetch API data
@@ -84,35 +87,31 @@ document.addEventListener("click", function(event) {
     }
 });
 
-/**
- * Filter works based on their category
- * @param {Event} event - The event object passed from the event listener
- */
+/* Filter works based on their category
+ {Event} event - The event object passed from the event listener**/
+ 
 function filterWorks(event) {
     // Update the selected category identifier
     selectedCategoryId = parseInt(event.target.id);
-    // Display filtered works
     displayWorks();
 }
 
 
-/* Display admin mode if the token has been correctly stored during login **/
+/* Display admin mode after login**/
 function displayAdminMode() {
   if (sessionStorage.getItem("token")) {
     
-
- // Display the logout button
+// Display the logout button
     const login = document.querySelector("#login");
     login.textContent = "Log out";
-    // Display the black banner
+    // Display the black banner on page
     const adminHeader = `<div class="edit_mode"><i class="fas fa-regular fa-pen-to-square fa-lg"></i><p>Mode édition</p></div>`;
     const header = document.querySelector("header");
     header.style.marginTop = "6rem";
     header.insertAdjacentHTML("beforebegin", adminHeader);
     // Create the edit button
     const editButtonTemplate = `<a href="#" class="edit-link"><i class="fa-regular fa-pen-to-square"></i> Modifier</a>`;
-    // Positioning of the edit buttons
-    const introSophie = document.querySelector("#introduction h2");
+    // Positioning of the edit button
     const galleryTitle = document.querySelector("#portfolio h2");
     galleryTitle.insertAdjacentHTML("afterend", editButtonTemplate);
     // Add "href="#modal"" to the edit button of the gallery
@@ -120,10 +119,7 @@ function displayAdminMode() {
     editButtonGallery.classList.add("open-modal");
     // Disable the filtering function
     const divFilters = document.getElementById("container-filters");
-    editButtonGallery.addEventListener("click", function (event) {
-      clearModal();
-      displayModalDeleteWorks();
-      displayWorksModal();
-    });
+    divFilters.style.display = "none";
+      
   }
 }
