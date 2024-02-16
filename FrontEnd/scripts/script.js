@@ -1,100 +1,88 @@
-let selectedCategoryId = 0; // by default, display all works
+const apiUrl = "http://localhost:5678/api/works"; // Assuming this is the URL for your API endpoint
+let worksData = []; // Array to store the fetched works data
 
-document.addEventListener("DOMContentLoaded", function() {
-    // Call the function to fetch and display data from the /works API
-    displayWorks();
-
-    // Call the function to display filters
-    displayFilters();
-    displayAdminMode();
-});
-
-function displayWorks() {
-    // Fetch data from the API
+function fetchDataAndDisplay() {
     fetch('http://localhost:5678/api/works')
-        .then(response => response.json())
-        .then(data => {
-            // Iterate through the data and create HTML elements for each image
-            const gallery = document.getElementById('gallery');
-            // Clear the existing content in the gallery
-            gallery.innerHTML = '';
-            data.forEach(work1 => {
-                // Check if the work belongs to the selected category or if all categories are selected
-/**no category is selected */ if (selectedCategoryId === 0 || work1.categoryId === selectedCategoryId) {/**selected category meansclicked  */
-                    const figure = document.createElement('figure');
-                    const img = document.createElement('img');
-                    img.src = work1.imageUrl;
-                    img.alt = work1.title;
-                    const figcaption = document.createElement('figcaption');
-                    figcaption.textContent = work1.title;
-                    figure.appendChild(img);
-                    figure.appendChild(figcaption);
-                    gallery.appendChild(figure);
-                }
-            });
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Network response was not ok.');
         })
-        .catch(error => console.error('Error fetching data:', error));
+        .then(data => {
+            worksData = data;
+            displayFilters();
+            displayWorks();
+            displayAdminMode();
+            displayModalDeleteWorks();
+
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
 }
 
-function displayFilters() {
+function displayWorks() {
+    const gallery = document.querySelector('.gallery');
+    gallery.innerHTML = ''; // Clear existing content
 
-  if (sessionStorage.getItem("token")) {
-    return; // If logged in, exit the function without displaying filters
-  }
-    // New promise: wait for this function to be executed in full before executing the next one
-    return new Promise((resolve) => {
-      // Fetch API data
-      fetch('http://localhost:5678/api/categories')
-        .then(function (response) {
-          if (response.ok) {
-            return response.json();
-          }
-        })
-        .then(function (data) {
-          // Add the "All" category to the API data
-          data.unshift({
-            id: 0,
-            name: "Tous",
-          });
-          // Get DOM elements for attaching filter buttons
-          const portfolio = document.getElementById("portfolio");
-          const gallery = document.getElementsByClassName("gallery").item(0);
-          // Create the filter buttons container
-          const divFilters = document.createElement("div");
-          divFilters.setAttribute("id", "container-filters");
-          // Create filter buttons based on API data
-          for (let category of data) {
-            const button = document.createElement("button");
-            button.classList.add("button-filter");
-            button.textContent = category.name;
-            button.id = category.id;
-            // Attach filter buttons to the DOM
-            divFilters.appendChild(button);
-          }
-          // Attach the filter buttons container to the DOM
-          portfolio.insertBefore(divFilters, gallery);
-          // Resolve the promise
-          resolve();
-        });
+    worksData.forEach(work => {
+        const figure = document.createElement('figure');
+        const image = document.createElement('img');
+        image.setAttribute('src', work.imageUrl);
+        image.setAttribute('alt', work.title);
+        const figCaption = document.createElement('figcaption');
+        figCaption.textContent = work.title;
+
+        figure.appendChild(image);
+        figure.appendChild(figCaption);
+        gallery.appendChild(figure);
     });
 }
 
-// Event listener to filter works when clicking on the chosen category
-document.addEventListener("click", function(event) {
-    if (event.target.matches(".button-filter")) {
-        // Call filterWorks with the event object
-        filterWorks(event);
-    }
-});
+function displayFilters() {
+    const categories = ['Tous', ...new Set(worksData.map(work => work.category.name))];
+    const containerFilters = document.createElement('div');
+    containerFilters.id = 'container-filters';
 
-/* Filter works based on their category
- {Event} event - The event object passed from the event listener**/
- 
-function filterWorks(event) {
-    // Update the selected category identifier
-    selectedCategoryId = parseInt(event.target.id);
-    displayWorks();
+    categories.forEach(category => {
+        const button = document.createElement('button');
+        button.classList.add('button-filter');
+        button.textContent = category;
+        button.addEventListener('click', filterWorks);
+        containerFilters.appendChild(button);
+    });
+
+    const portfolio = document.getElementById('portfolio');
+    portfolio.insertBefore(containerFilters, portfolio.firstChild);
 }
+
+function filterWorks(event) {
+    const categoryName = event.target.textContent;
+    const filteredWorks = categoryName === 'Tous' ? worksData : worksData.filter(work => work.category.name === categoryName);
+    displayFilteredWorks(filteredWorks);
+}
+
+function displayFilteredWorks(works) {
+    const gallery = document.querySelector('.gallery');
+    gallery.innerHTML = ''; // Clear existing content
+
+    works.forEach(work => {
+        const figure = document.createElement('figure');
+        const image = document.createElement('img');
+        image.setAttribute('src', work.imageUrl);
+        image.setAttribute('alt', work.title);
+        const figCaption = document.createElement('figcaption');
+        figCaption.textContent = work.title;
+
+        figure.appendChild(image);
+        figure.appendChild(figCaption);
+        gallery.appendChild(figure);
+    });
+}
+
+// Call the function to fetch data and display initially
+fetchDataAndDisplay();
 
 
 /* Display admin mode after login**/
@@ -118,8 +106,66 @@ function displayAdminMode() {
     const editButtonGallery = document.querySelector("#portfolio a");
     editButtonGallery.classList.add("open-modal");
     // Disable the filtering function
-    const divFilters = document.getElementById("container-filters");
-    divFilters.style.display = "none";
+    editButtonGallery.addEventListener("click", function (event) {
       
+      displayModalDeleteWorks();
+      displayWorksModal();
+      
+    });
   }
+  }
+
+
+
+async function displayWorksModal() {
+  const gallery = document.getElementById("modal-gallery");
+  
+  // Clear existing content
+  while (gallery.firstChild) {
+      gallery.removeChild(gallery.firstChild);
+  }
+
+  // Iterate over worksData array to populate modal gallery
+  worksData.forEach(work => {
+      let figure = document.createElement("figure");
+      figure.classList.add("modal-figure-works");
+
+      let image = document.createElement("img");
+      image.setAttribute("crossorigin", "anonymous");
+      image.setAttribute("src", work.imageUrl);
+      image.alt = work.title;
+
+      let deleteButton = document.createElement("i");
+      deleteButton.setAttribute("id", work.id);
+      deleteButton.classList.add("fa-solid", "fa-trash-can", "delete-work");
+
+      gallery.append(figure);
+      figure.append(deleteButton, image);
+  });
 }
+function displayModalDeleteWorks() {
+  // Get the works deletion modal
+  const modalWrapper = document.querySelector(".modal-wrapper-delete");
+  // Create the container between the two modals
+  const modalNav = document.createElement("div");
+  modalNav.classList.add("modal-nav");
+  // Create the modal close button
+  const closeModalButton = document.createElement("i");
+  closeModalButton.classList.add("fa-solid", "fa-xmark", "close-modal-button");
+  // Create the modal title
+  const titleModal = document.createElement("h3");
+  titleModal.textContent = "Gallerie Photo";
+  // Create the gallery container
+  const containerGallery = document.createElement("div");
+  containerGallery.setAttribute("id", "modal-gallery");
+  // Create the "Add photo" button to switch to the works addition modal
+  const addWorkButton = document.createElement("button");
+  addWorkButton.classList.add("link-modal-add");
+  addWorkButton.textContent = "Ajouter une photo";
+
+  // Attach all the above elements to the DOM
+  modalNav.append(closeModalButton);
+  modalWrapper.append(modalNav, titleModal, containerGallery, addWorkButton);
+}
+
+
