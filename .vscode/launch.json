@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "type": "node",
+        "request": "attach",
+        "name": "Attach to Node.js",
+        "port": 5678,
+        "restart": true,
+        "sourceMaps": true,
+        "localRoot": "${workspaceFolder}",
+        "remoteRoot": "${workspaceFolder}/Backend/controllers",
+      }
+    ]
+  }
+  
