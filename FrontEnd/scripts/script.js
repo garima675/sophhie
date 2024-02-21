@@ -23,8 +23,7 @@ function fetchDataAndDisplay() {
 }
 
 function displayWorks() {
-    const gallery = document.querySelector('.gallery');
-    gallery.innerHTML = ''; // Clear existing content
+
 
     worksData.forEach(work => {
         const figure = document.createElement('figure');
@@ -390,3 +389,120 @@ function setOptionsSelectForm() {
       }
     });
 }
+
+ /* EVENT: Return to the work deletion modal when clicking on the arrow**/
+ 
+document.addEventListener("click", function (event) {
+  if (event.target.matches(".go-back-button")) {
+    goBackModal();
+  }
+});
+
+
+ /* EVENT: Send form data when clicking on the submit button**/
+ 
+document.addEventListener("click", function (event) {
+  if (event.target.matches(".js-add-works")) {
+    event.preventDefault();
+    const formAddWorks = document.querySelector(".form-add-works");
+    if (formAddWorks.checkValidity()) {
+      sendData();
+      goBackModal();
+    }
+  }
+});
+
+
+/**
+ * Return to the previous modal
+ */
+function goBackModal() {
+  const modalWrapperAdd = document.querySelector(".modal-wrapper-add");
+  modalWrapperAdd.style.display = "none";
+  while (modalWrapperAdd.firstChild) {
+    modalWrapperAdd.removeChild(modalWrapperAdd.firstChild);
+  }
+  const modalWrapperDelete = document.querySelector(".modal-wrapper-delete");
+  modalWrapperDelete.style.display = null;
+}
+
+
+/**event-log out */
+ 
+document.addEventListener("click", function (event) {
+  if (event.target.matches("#login")) {
+    sessionStorage.removeItem("token");
+  }
+});
+
+
+ /** * Send works to the API  **/
+ 
+function sendData() {
+  // Get form values
+  const title = document.getElementById("title").value;
+  const selectCategory = document.getElementById("selectCategory");
+  const choice = selectCategory.selectedIndex;
+  const category = selectCategory.options[choice].id;
+  const file = document.getElementById("file").files[0];
+
+  // Create formData object
+  const formData = new FormData();
+  formData.append("image", file);
+  formData.append("title", title);
+  formData.append("category", category);
+
+  // Get the token
+  const token = sessionStorage.getItem("token");
+
+  // Send data to the server with an HTTP POST request
+  fetch('http://localhost:5678/api/works', {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  })
+    .then((response) => {
+      if (response.ok) {
+        modalAlert("Photo ajoutée avec succés");
+      } else {
+        console.error("Error sending data: ", a.status);
+      }
+    })
+    .catch((error) => console.error("Error sending data: ", error));
+}
+
+/**
+ * EVENT: Get the file and update the preview when clicking on the validate button
+ */
+document.addEventListener("change", function (event) {
+  if (event.target.matches(".input-image")) {
+    const imgPreview = document.querySelector(".img-preview");
+    const labelAddImg = document.querySelector(".labelAddImg");
+    const infoAddImg = document.querySelector(".info-addImg");
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    const allowedFormats = ["image/jpeg", "image/png"];
+    if (file.size <= 4 * 1024 * 1024) {
+      reader.addEventListener("load", () => {
+        imgPreview.src = reader.result;
+        labelAddImg.style.display = "none";
+        infoAddImg.style.display = "none";
+      });
+      if (file) {
+        reader.readAsDataURL(file);
+      }
+      if (!allowedFormats.includes(file.type)) {
+        modalAlert("SEULEMENT LES FICHIERS EN .JPG OU .PNG SONT ACCEPTÉS");
+        imgPreview.src = "assets/icons/icon-img.png";
+      }
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      modalAlert("La taille maximale autorisée est de 4mo");
+      imgPreview.src = "assets/icons/icon-img.png";
+    }
+  }
+});
+
