@@ -351,10 +351,9 @@ footer nav ul {
   font-size: 11px;
 }
 
-.link-modal-add,
-.js-add-works {
-  width: fit-content;
-  max-width: 20rem;
+.link-modal-add
+{
+  width: text fit-content;
   font-family: "Syne";
   font-size: 16px;
   font-weight: 700;
@@ -366,6 +365,22 @@ footer nav ul {
   padding: 10px 49px;
   margin: auto;
   cursor: pointer;
+  text-align: center;
+}
+.js-add-works {
+  width: 150px;
+  font-family: "Syne";
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 19px;
+  color: #ffffff;
+  background-color: #1d6154;
+  border: 0px;
+  border-radius: 60px;
+  padding: 10px 49px;
+  margin: auto;
+  cursor: pointer;
+  text-align: center;
 }
 
 .js-delete-works {
@@ -385,7 +400,7 @@ footer nav ul {
 }
 
 .container-add-img {
-  height: fit-content;
+  height: 120px;
   background-color: #e8f1f6;
   display: flex;
   flex-direction: column;
@@ -395,9 +410,9 @@ footer nav ul {
 }
 
 .container-add-img img {
-  width: auto;
-  max-height: 90px;
-  margin-bottom: 21px;
+  width: 100px;
+  height:100%;
+  
 }
 
 .container-add-img label {
@@ -432,6 +447,7 @@ footer nav ul {
   flex-direction: column;
   margin-bottom: 32px;
 }
+
 
 .container-form-info label {
   font-family: "Work Sans";
@@ -501,4 +517,26 @@ dialog::backdrop {
   background: white;
   border: #b1663c;
   color: #b1663c;
+}
+.fa-image{
+  font-size: 50px;
+  color:#B9C5CC;
+  margin-bottom: 10px;
+}
+
+
+
+
+/*animation*/
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    left: -700px;
+  }
+  to {
+    opacity: 1;
+    left: 0;
+    z-index: 1;
+  }
 }
