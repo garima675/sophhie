@@ -11,13 +11,13 @@ export async function modalAlert(message) {
   loginSection.appendChild(modalAlert);
   modalAlert.showModal();
 
-  exitModalBtn.addEventListener("click", function (event) {
+  exitModalBtn.addEventListener("click", function(event) {
     event.preventDefault();
     modalAlert.close();
     modalAlert.style.display = "none";
   });
 
-  window.onclick = function (event) {
+  window.onclick = function(event) {
     if (event.target === modalAlert) {
       event.preventDefault();
       modalAlert.close();
@@ -136,14 +136,14 @@ function displayAdminMode() {
     // Disable the filtering function
     const divFilters = document.getElementById("container-filters");
     divFilters.style.display = "none";
-    editButtonGallery.addEventListener("click", function (event) {
+    editButtonGallery.addEventListener("click", function(event) {
       clearModal();
       displayModalDeleteWorks();
       displayWorksModal();
     });
   }
 }
-
+/**to prevent duplicated content upon the reopening of the modal */
 function clearModal() {
   const modalWrapperDelete = document.querySelector(".modal-wrapper-delete");
   const modalWrapperAdd = document.querySelector(".modal-wrapper-add");
@@ -161,6 +161,8 @@ function clearModal() {
   }
 }
 
+/** * Display works in the modal based on API data**/
+
 async function displayWorksModal() {
   const data = worksData;
 
@@ -175,12 +177,11 @@ async function displayWorksModal() {
     let deleteButton = document.createElement("i");
     deleteButton.setAttribute("id", work.id);
     deleteButton.classList.add("fa-solid", "fa-trash-can", "delete-work");
-
     gallery.append(figure);
     figure.append(deleteButton, image);
   }
 }
-
+/**Display the modal in works deleltion mode */
 function displayModalDeleteWorks() {
   const modalWrapper = document.querySelector(".modal-wrapper-delete");
   const modalNav = document.createElement("div");
@@ -194,26 +195,68 @@ function displayModalDeleteWorks() {
   const addWorkButton = document.createElement("button");
   addWorkButton.classList.add("link-modal-add");
   addWorkButton.textContent = "Ajouter une photo";
-
   modalNav.append(closeModalButton);
   modalWrapper.append(modalNav, titleModal, containerGallery, addWorkButton);
 }
 
-document.addEventListener("click", function (event) {
-  if (event.target.matches(".open-modal")) {
-    event.stopPropagation();
-    modal.showModal();
-  }
-});
 
-document.addEventListener("click", function (event) {
-  if (event.target.matches(".close-modal-button")) {
-    modal.close();
-  } else if (event.target.matches("#modal")) {
-    modal.close();
-  }
-});
 
+/* Create options for the category select in the work addition form*/
+
+function setOptionsSelectForm() {
+  fetch('http://localhost:5678/api/categories')
+    .then(function(response) {
+      if (response.ok) {
+        return response.json();
+      }
+    })
+    .then(function(data) {
+      data.unshift({
+        id: 0,
+        name: "",
+      });
+      for (let category of data) {
+        const option = document.createElement("option");
+        option.classList.add("cat-option");
+        option.setAttribute("id", category.id);
+        option.setAttribute("name", category.name);
+        option.textContent = category.name;
+        const selectCategory = document.getElementById("selectCategory");
+        selectCategory.append(option);
+      }
+    });
+}
+
+
+
+
+/**
+ * Delete works from the API
+ */
+function deleteWorksData(id) {
+  fetch(`http://localhost:5678/api/works/${id}`, {
+    method: "DELETE",
+    headers: {
+      "content-type": "application/Json",
+      authorization: "Bearer " + sessionStorage.getItem("token"),
+    },
+  }).then((response) => {
+    if (response.status === 200) {
+      const deletedElement = document.getElementById(id);
+      if (deletedElement) {
+        deletedElement.parentNode.removeChild(deletedElement);
+      }
+      displayModalDeleteWorks();
+      displayWorksModal();
+      displayWorks();
+    }
+  });
+}
+
+
+
+
+/**dislay the modal in addition modal */
 function displayModalAddWork() {
   const modalWrapper = document.querySelector(".modal-wrapper-add");
   modalWrapper.style.display = null;
@@ -231,18 +274,23 @@ function displayModalAddWork() {
   displayFormAddWork();
 }
 
-document.addEventListener("click", function (event) {
-  if (event.target.matches(".link-modal-add")) {
-    event.preventDefault();
-    const modalWrapper = document.querySelector(".modal-wrapper-delete");
-    modalWrapper.style.display = "none";
-    displayModalAddWork();
-  }
-});
 
-/**
- * Display the work addition form
- */
+
+
+/**return to the previous modal */
+function goBackModal() {
+  const modalWrapperAdd = document.querySelector(".modal-wrapper-add");
+  modalWrapperAdd.style.display = "none";
+  while (modalWrapperAdd.firstChild) {
+    modalWrapperAdd.removeChild(modalWrapperAdd.firstChild);
+  }
+  const modalWrapperDelete = document.querySelector(".modal-wrapper-delete");
+  modalWrapperDelete.style.display = null;
+}
+
+
+/** * Display the work addition form**/
+
 function displayFormAddWork() {
   // Get the works deletion modal
   const modalWrapper = document.querySelector(".modal-wrapper-add");
@@ -317,7 +365,7 @@ function displayFormAddWork() {
   formAddWork.append(containerFormImg, containerFormInfo, validFormLabel);
   containerFormImg.append(
     faImagePreview, // Initially display the Font Awesome icon
-    imgPreview,     // Initially hide the image preview
+    imgPreview, // Initially hide the image preview
     labelAddImgButton,
     addImgButton,
     infoAddImg
@@ -332,13 +380,13 @@ function displayFormAddWork() {
   verifForm();
 }
 
-
+/**check the work addition form for button color change */
 function verifForm() {
   const formAddWork = document.querySelector(".form-add-works");
   const validForm = document.querySelector(".js-add-works");
   const requiredElements = document.querySelectorAll(".verif-form[required]");
   requiredElements.forEach((element) => {
-    element.addEventListener("input", function () {
+    element.addEventListener("input", function() {
       if (formAddWork.checkValidity()) {
         validForm.style.backgroundColor = "#1D6154";
       } else {
@@ -348,51 +396,53 @@ function verifForm() {
   });
 }
 
-function setOptionsSelectForm() {
-  fetch('http://localhost:5678/api/categories')
-    .then(function (response) {
+
+
+
+/* Send works to the API**/
+
+function sendData() {
+  // Get form values
+  const title = document.getElementById("title").value;
+  const selectCategory = document.getElementById("selectCategory");
+  const choice = selectCategory.selectedIndex;
+  const category = selectCategory.options[choice].id;
+  const file = document.getElementById("file").files[0];
+
+  // Create formData object
+  const formData = new FormData();
+  formData.append("image", file);
+  formData.append("title", title);
+  formData.append("category", category);
+
+  // Get the token
+  const token = sessionStorage.getItem("token");
+  // Send data to the server with an HTTP POST request
+  fetch('http://localhost:5678/api/works', {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    })
+    .then((response) => {
       if (response.ok) {
-        return response.json();
+        modalAlert("Photo ajoutée avec succés");
+      } else {
+        console.error("Error sending data: ", a.status);
       }
     })
-    .then(function (data) {
-      data.unshift({
-        id: 0,
-        name: "",
-      });
-      for (let category of data) {
-        const option = document.createElement("option");
-        option.classList.add("cat-option");
-        option.setAttribute("id", category.id);
-        option.setAttribute("name", category.name);
-        option.textContent = category.name;
-        const selectCategory = document.getElementById("selectCategory");
-        selectCategory.append(option);
-      }
-    });
+    .catch((error) => console.error("Error sending data: ", error));
+
+
+
 }
 
-function deleteWorksData(id) {
-  fetch(`http://localhost:5678/api/works/${id}`, {
-    method: "DELETE",
-    headers: {
-      "content-type": "application/Json",
-      authorization: "Bearer " + sessionStorage.getItem("token"),
-    },
-  }).then((response) => {
-    if (response.status === 200) {
-      const deletedElement = document.getElementById(id);
-      if (deletedElement) {
-        deletedElement.parentNode.removeChild(deletedElement);
-      }
-      displayModalDeleteWorks();
-      displayWorksModal();
-      displayWorks();
-    }
-  });
-}
+/**update the gallery on the moal and page without reloading* */
 
 async function updateGallery() {
+  /*updte the modal gallery**/
   displayWorks();
 
   const modalGallery = document.getElementById("modal-gallery");
@@ -402,76 +452,69 @@ async function updateGallery() {
   displayWorksModal();
 }
 
-document.addEventListener("click", function (event) {
-  if (event.target.matches(".go-back-button")) {
-    goBackModal();
-  }
-});
-
-document.addEventListener("click", function (event) {
-  if (event.target.matches(".js-add-works")) {
-    event.preventDefault();
-    const formAddWorks = document.querySelector(".form-add-works");
-    if (formAddWorks.checkValidity()) {
-      sendData();
-      goBackModal();
-      updateGallery();
-    }
-  }
-});
-
-function goBackModal() {
-  const modalWrapperAdd = document.querySelector(".modal-wrapper-add");
-  modalWrapperAdd.style.display = "none";
-  while (modalWrapperAdd.firstChild) {
-    modalWrapperAdd.removeChild(modalWrapperAdd.firstChild);
-  }
-  const modalWrapperDelete = document.querySelector(".modal-wrapper-delete");
-  modalWrapperDelete.style.display = null;
-}
-
-document.addEventListener("click", function (event) {
+/**event:logout when clicking on logout */
+document.addEventListener("click", function(event) {
   if (event.target.matches("#login")) {
     sessionStorage.removeItem("token");
   }
 });
 
-function sendData() {
-  const title = document.getElementById("title").value;
-  const selectCategory = document.getElementById("selectCategory");
-  const choice = selectCategory.selectedIndex;
-  const category = selectCategory.options[choice].id;
-  const file = document.getElementById("file").files[0];
 
-  const formData = new FormData();
-  formData.append("image", file);
-  formData.append("title", title);
-  formData.append("category", category);
 
-  const token = sessionStorage.getItem("token");
+/**event:open the modal when clocking on mordifier button */
+document.addEventListener("click", function(event) {
+  if (event.target.matches(".open-modal")) {
+    event.stopPropagation();
+    modal.showModal();
+  }
+});
 
-  fetch('http://localhost:5678/api/works', {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: formData,
-  })
-    .then((response) => {
-      if (response.ok) {
-        modalAlert("Photo ajoutée avec succés");
-      } else {
-        console.error("Error sending data: ", a.status);
-      }
-    })
-    .catch((error) => console.error("Error sending data: ", error));
-}
+/**close the modal when clicking on the close button or outside of modal */
 
+document.addEventListener("click", function(event) {
+  if (event.target.matches(".close-modal-button")) {
+    modal.close();
+  } else if (event.target.matches("#modal")) {
+    modal.close();
+  }
+});
+
+
+
+/**event-delete works on modl when clicking on trash can */
+
+document.addEventListener("click", (event) => {
+  if (event.target.matches(".delete-work")) {
+    event.preventDefault();
+    deleteWorksData(event.target.id);
+    modalAlert("Suppression de la photo effectuée");
+    event.preventDefault();
+    updateGallery();
+  }
+});
+
+
+/*transfer to addintion model when click on add photo button**/
+document.addEventListener("click", function(event) {
+  if (event.target.matches(".link-modal-add")) {
+    event.preventDefault();
+    const modalWrapper = document.querySelector(".modal-wrapper-delete");
+    modalWrapper.style.display = "none";
+    displayModalAddWork();
+  }
+});
+
+
+/**event-return to deletion mode on clicking arrow */
+document.addEventListener("click", function(event) {
+  if (event.target.matches(".go-back-button")) {
+    goBackModal();
+  }
+});
 /**
- * EVENT: Get the file and update the preview when clicking on the validate button
- */
-document.addEventListener("change", function (event) {
+ * EVENT: Get the file and update the preview when clicking on the validate button**/
+
+document.addEventListener("change", function(event) {
   if (event.target.matches(".input-image")) {
     const containerFormImg = document.querySelector(".container-add-img");
     const imgPreview = containerFormImg.querySelector("img.img-preview");
@@ -514,15 +557,15 @@ document.addEventListener("change", function (event) {
   }
 });
 
-
-
-document.addEventListener("click", (event) => {
-  if (event.target.matches(".delete-work")) {
-    deleteWorksData(event.target.id);
-    modalAlert("Suppression de la photo effectuée");
+/**send form data when  on submit button*/
+document.addEventListener("click", function(event) {
+  if (event.target.matches(".js-add-works")) {
     event.preventDefault();
-    updateGallery();
+    const formAddWorks = document.querySelector(".form-add-works");
+    if (formAddWorks.checkValidity()) {
+      sendData();
+      goBackModal();
+      updateGallery();
+    }
   }
 });
-
-
